@@ -1,0 +1,92 @@
+[package]
+name = "splatcom"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+brush-render = { git = "https://github.com/ArthurBrussee/brush", rev = "aaf4d6d" }
+brush-serde  = { git = "https://github.com/ArthurBrussee/brush", rev = "aaf4d6d" }
+
+# `webgpu` + `extension` give us `burn::backend::wgpu::WgpuDevice` and the
+# `burn::backend` module brush expects; `metal` matches brush's own enabled
+# set so feature unification doesn't accidentally drop it.
+burn = { git = "https://github.com/tracel-ai/burn", features = ["webgpu", "metal", "extension"] }
+
+anyhow = "1.0.102"
+tokio = { version = "1.42", default-features = false, features = ["rt", "macros", "fs", "io-util"] }
+
+# ---------------------------------------------------------------------------
+# Dependency pins.
+#
+# brush `aaf4d6d` was committed 2026-05-15 12:32 EDT against burn HEAD as of
+# that moment. ~30 min later burn d30a82ae7 renamed `DispatchTensor` →
+# `BridgeTensor`, and a few hours later 73b72bc feature-gated the
+# `from_primitive` signature. Either change makes brush fail to compile.
+# `2fef95179` is the last burn commit before that rename and is what brush
+# was actually written against.
+#
+# Brush also relies on a `workgroupUniformLoad` primitive that lives on
+# Arthur's cubecl fork (PR pending upstream) and his wgpu fork's
+# js-interop branch — same patches brush itself uses in its workspace
+# Cargo.toml. Cargo `[patch]` only applies from the workspace root, so we
+# must repeat them here even though they originate from brush.
+#
+# The `?pin` query suffix on the burn URL is intentional: cargo's `[patch]`
+# table rejects patches whose source URL is identical to the URL being
+# patched ("patches must point to different sources"). A query string isn't
+# stripped by cargo's URL canonicalisation, so it's enough to make the
+# patch source distinct while still pointing at the same GitHub repo.
+# ---------------------------------------------------------------------------
+
+[patch."https://github.com/tracel-ai/burn"]
+burn                   = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-autodiff          = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-backend           = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-backend-extension = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-core              = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-cpu               = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-cubecl            = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-cubecl-fusion     = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-cuda              = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-dataset           = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-derive            = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-dispatch          = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-flex              = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-fusion            = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-ir                = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-ndarray           = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-nn                = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-optim             = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-rl                = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-rocm              = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-std               = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-store             = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-tch               = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-tensor            = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-train             = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-vision            = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+burn-wgpu              = { git = "https://github.com/tracel-ai/burn?pin", rev = "2fef95179" }
+
+[patch."https://github.com/tracel-ai/cubecl"]
+cubecl                 = { git = "https://github.com/ArthurBrussee/cubecl", branch = "feat/workgroup-uniform-load" }
+cubecl-common          = { git = "https://github.com/ArthurBrussee/cubecl", branch = "feat/workgroup-uniform-load" }
+cubecl-core            = { git = "https://github.com/ArthurBrussee/cubecl", branch = "feat/workgroup-uniform-load" }
+cubecl-cpp             = { git = "https://github.com/ArthurBrussee/cubecl", branch = "feat/workgroup-uniform-load" }
+cubecl-cpu             = { git = "https://github.com/ArthurBrussee/cubecl", branch = "feat/workgroup-uniform-load" }
+cubecl-cuda            = { git = "https://github.com/ArthurBrussee/cubecl", branch = "feat/workgroup-uniform-load" }
+cubecl-hip             = { git = "https://github.com/ArthurBrussee/cubecl", branch = "feat/workgroup-uniform-load" }
+cubecl-ir              = { git = "https://github.com/ArthurBrussee/cubecl", branch = "feat/workgroup-uniform-load" }
+cubecl-macros          = { git = "https://github.com/ArthurBrussee/cubecl", branch = "feat/workgroup-uniform-load" }
+cubecl-macros-internal = { git = "https://github.com/ArthurBrussee/cubecl", branch = "feat/workgroup-uniform-load" }
+cubecl-opt             = { git = "https://github.com/ArthurBrussee/cubecl", branch = "feat/workgroup-uniform-load" }
+cubecl-runtime         = { git = "https://github.com/ArthurBrussee/cubecl", branch = "feat/workgroup-uniform-load" }
+cubecl-std             = { git = "https://github.com/ArthurBrussee/cubecl", branch = "feat/workgroup-uniform-load" }
+cubecl-wgpu            = { git = "https://github.com/ArthurBrussee/cubecl", branch = "feat/workgroup-uniform-load" }
+cubecl-zspace          = { git = "https://github.com/ArthurBrussee/cubecl", branch = "feat/workgroup-uniform-load" }
+
+[patch.crates-io]
+wgpu       = { git = "https://github.com/ArthurBrussee/wgpu", branch = "js-interop" }
+wgpu-core  = { git = "https://github.com/ArthurBrussee/wgpu", branch = "js-interop" }
+wgpu-hal   = { git = "https://github.com/ArthurBrussee/wgpu", branch = "js-interop" }
+wgpu-types = { git = "https://github.com/ArthurBrussee/wgpu", branch = "js-interop" }
+naga       = { git = "https://github.com/ArthurBrussee/wgpu", branch = "js-interop" }
