@@ -27,19 +27,22 @@ pub async fn load_ply_file(filepath: impl AsRef<Path>, subsample_points: Option<
 
 
 
-pub async fn render(request: message::ImageRequest, splats: Splats) {
+pub async fn render(
+    // request: message::ImageRequest, 
+    splats: Splats,
+) {
     
     let position = glam::Vec3 { x: 10.0, y: 10.0, z: 10.0 };
-    let rotation = glam_quat([1.0, 0.0, 0.0, 0.0]);
-    let center_uv = glam::Vec2::new(100.0, 100.0);
-    let img_size = glam::UVec2 { x: 100, y: 100 };
+    let rotation = glam_quat([1.0, 0.5, 0.0, 0.0]);
+    let center_uv = glam::Vec2::new(10000.0, 10000.0);
+    let img_size = glam::UVec2 { x: 1000, y: 1000 };
     let background = glam::Vec3 { x: 0.0, y: 0.0, z: 0.0 };
 
     let camera = brush_render::camera::Camera::new(
         position,           // Position 
         rotation,           // Rotation
-        100.0,              // FOV in x
-        100.0,              // FOV in y
+        1000.0,              // FOV in x
+        1000.0,              // FOV in y
         center_uv           // FIXME
     );
 
@@ -55,12 +58,11 @@ pub async fn render(request: message::ImageRequest, splats: Splats) {
     let tensor_raw = image_tensor.into_data();
     let floats: Vec<f32> = tensor_raw.to_vec().expect("expected f32 tensor");
 
-    let proc_floats: Vec<u8> = floats.iter()
+    let img_buffer: Vec<u8> = floats.iter()
         .map(|f| (f.clamp(0.0, 1.0) * 255.0) as u8)
         .collect();
 
-    
-
+    image::save_buffer("frame.png", &img_buffer, img_size[0], img_size[1], image::ColorType::Rgba8).unwrap();
 }
 
 /// Helper function to construct quaternions from different convention
