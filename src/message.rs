@@ -28,7 +28,6 @@ impl ImageRequest {
 
 impl Default for ImageRequest {
     fn default() -> Self {
-        
         ImageRequest {
             request_id: 0, 
             timestamp: Instant::now(), 
@@ -41,10 +40,10 @@ impl Default for ImageRequest {
 
 struct ImageResponse {
     request_id: u64,                    // Matching request ID from Image request
-    timestamp: debug_field,             // 
-    image_path: debug_field,
-    width: debug_field,
-    height: debug_field,
+    timestamp: Instant,                 // Server completion time
+    image_path: String,            // Resultant Image Path
+    width: u64,                         // Image width in pixels
+    height: u64,                        // Image height in pixels
 }
 
 
@@ -52,9 +51,9 @@ impl Default for ImageResponse {
     fn default() -> Self {
         ImageResponse {
             request_id: 0, 
-            timestamp: false, 
-            image_path: false, 
-            width: false, 
-            height: false }
+            timestamp: Instant::now(), 
+            image_path: "".to_string(), 
+            width: 0, 
+            height: 0 }
     }
 }
