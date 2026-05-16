@@ -4,6 +4,7 @@ use std::collections::VecDeque;
 use crate::util::glam_quat;
 use serde::Deserialize;
 use serde_json;
+use log::*;
 
 
 type debug_field = bool; // Current debug item to indicate a field that should be replaced later.
@@ -62,14 +63,19 @@ impl ImageRequest {
     }
 
     pub fn get_camera_quaternion(&self) -> glam::Quat {
-        glam_quat([
+
+        let mut quat = glam_quat([
             self.T_world_camera[3],         // quat W
             self.T_world_camera[4],         // quat X
             self.T_world_camera[5],         // quat Y
             self.T_world_camera[6]          // quat Z
-        ]).normalize() 
+        ]);
 
-        // TODO Detect all zero case, return unit quaternion with warn message
+        if quat == glam::Quat::from_array([0.0, 0.0, 0.0, 0.0]) {
+            warn!("All zero quaternion detected! Using unit quaternion instead.");
+            quat = glam_quat([1.0, 0.0, 0.0, 0.0]);
+        }
+        quat.normalize() 
     }
 
     pub fn get_id(&self) -> u64 {

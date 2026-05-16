@@ -25,9 +25,16 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
         // Complete responses, dump in completed requests pile/heap/something
         // Drain responses in whatever means is actually necessary
 
+    // Load File
     info!("Loading {}...", path);
     let splats = util::load_ply_file(&path, None).await?;
     info!("Loaded {} splats from {path}", splats.num_splats());
+
+
+    // Spawn IPC reciever thread
+    
+
+    
 
     // Create ImageRequest queue
     let buffer: Arc<RwLock<VecDeque<msg::ImageRequest>>> = Arc::new(RwLock::new(VecDeque::new()));
@@ -39,6 +46,9 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
     buffer.write().unwrap().push_back(sample_request.clone());
 
     info!("Beginning render loop...");
+
+
+    // Main rendering loop
 
     while let Some(r) = buffer.read().unwrap().front() {
         let request = buffer.write().unwrap().pop_front().unwrap();
