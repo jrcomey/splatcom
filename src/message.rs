@@ -1,12 +1,17 @@
 use std::time::Instant;
-
+use std::collections::VecDeque;
 use crate::util::glam_quat;
 
 
 type debug_field = bool; // Current debug item to indicate a field that should be replaced later.
 
 
+// /// Buffer of Image Requests
+// pub struct RequestBuffer {
+//     buffer: VecDeque<ImageRequest>,
+// }
 
+#[derive(Clone)]
 pub struct ImageRequest {
     request_id: u64,                        //  FIXME Unique id (hash? integer? Integer means overflow problem. Check later.)
     timestamp: Instant,                     //  Timestamp from time lib
@@ -17,8 +22,12 @@ pub struct ImageRequest {
 
 impl ImageRequest {
 
-    /// Basic Constructor for ImageRequest
+    /// Basic Constructor for ImageRequest, to be filled with actual IO later
     pub fn new() -> Self {
+        ImageRequest { ..Default::default()}
+    }
+
+    pub fn null() -> Self {
         ImageRequest { ..Default::default()}
     }
 
@@ -27,20 +36,26 @@ impl ImageRequest {
         todo!()
     }
 
-    pub fn camera_position(&self) -> glam::Vec3 {
+    pub fn get_camera_position(&self) -> glam::Vec3 {
         glam::Vec3 { 
             x: self.T_world_camera[0], 
             y: self.T_world_camera[1], 
             z: self.T_world_camera[2] }
     }
 
-    pub fn camera_quaternion(&self) -> glam::Quat {
+    pub fn get_camera_quaternion(&self) -> glam::Quat {
         glam_quat([
             self.T_world_camera[3],         // quat W
             self.T_world_camera[4],         // quat X
             self.T_world_camera[5],         // quat Y
             self.T_world_camera[6]          // quat Z
-        ])
+        ]).normalize() 
+
+        // TODO Detect all zero case, return unit quaternion with warn message
+    }
+
+    pub fn get_id(&self) -> u64 {
+        self.request_id
     }
 }
 
@@ -51,7 +66,7 @@ impl Default for ImageRequest {
             request_id: 0, 
             timestamp: Instant::now(), 
             camera_id: false, 
-            T_world_camera: [0.0; 7], 
+            T_world_camera: [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], 
             intrinsics: false 
         }
     }
