@@ -1,9 +1,33 @@
-extern crate brush_render;
-extern crate anyhow;
-use brush_render::camera::Camera;
+use anyhow::Result;
+use serde_json;
 mod util;
+mod message;
+
+fn run_server() {
+
+    // Broad architecture layout:
+        // Load file
+        // Spawn thread to start pulling in requests, which are placed in a buffer
+        // As soon as file is loaded, start draining requests
+            // In parallel? Have to figure out how that works on apple silicon with shared memory
+        // Complete responses, dump in completed requests pile/heap/something
+        // Drain responses in whatever means is actually necessary
+}
+
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> Result<()> {
 
 
-fn main() {
-    println!("Hello, world!");
+    // Some AI loading code that I'm not using but it generated anyway
+    // let mut args = std::env::args().skip(1);
+
+    // let Some(path) = args.next() else {
+    //     eprintln!("usage: splatcom <path-to-ply>");
+    //     return Ok(());
+    // };
+
+    // let splats = util::load_ply_file(&path, None).await?;
+    // println!("Loaded {} splats from {path}", splats.num_splats());
+
+    Ok(())
 }
