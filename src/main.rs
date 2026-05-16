@@ -11,7 +11,7 @@ extern crate log;
 
 use log::*;
 
-fn run_server(filepath: &str) {
+async fn run_server(path: &str) -> Result<(), anyhow::Error> {
 
     // Broad architecture layout:
         // Load file
@@ -21,7 +21,11 @@ fn run_server(filepath: &str) {
         // Complete responses, dump in completed requests pile/heap/something
         // Drain responses in whatever means is actually necessary
 
-    util::load_ply_file(filepath, None);
+    info!("Loading {}...", path);
+    let splats = util::load_ply_file(&path, None).await?;
+    info!("Loaded {} splats from {path}", splats.num_splats());
+
+    Ok(())
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -37,9 +41,7 @@ async fn main() -> Result<()> {
         return Ok(());
     };
 
-    info!("Loading {}...", path);
-    let splats = util::load_ply_file(&path, None).await?;
-    info!("Loaded {} splats from {path}", splats.num_splats());
+    run_server(&path).await?;
 
     Ok(())
 }
