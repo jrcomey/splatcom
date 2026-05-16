@@ -1,26 +1,46 @@
 use std::time::Instant;
 
+use crate::util::glam_quat;
+
 
 type debug_field = bool; // Current debug item to indicate a field that should be replaced later.
 
 
 
-struct ImageRequest {
+pub struct ImageRequest {
     request_id: u64,                    //  FIXME Unique id (hash? integer? Integer means overflow problem. Check later.)
     timestamp: Instant,             //  Timestamp from time lib
     camera_id: debug_field,             //  FIXME ID associated with camera? Unclear what this means. Maybe investigate transmitting camera lens data with JSON request.
-    T_world_camera: [f64; 7],        // Camera transform. +X forward, +Z up. Quaternion configuration: [qw qx qy qz]
+    T_world_camera: [f32; 7],        // Camera transform. +X forward, +Z up. Quaternion configuration: [qw qx qy qz]
     intrinsics: debug_field,            // FIXME Pinhole camera intrinsics. Not sure what this refers to. FOV/other camera properties? Double check
 }
 
 impl ImageRequest {
+
+    /// Basic Constructor for ImageRequest
     pub fn new() -> Self {
-        todo!()
+        ImageRequest { ..Default::default()}
     }
 
     /// Takes in a recieved JSON string and attempts to parse it into an image request. Returns an error if the JSON is incomplete or contains bad information.
     pub fn new_from_json() -> Result<Self, Box<dyn std::error::Error>> {
         todo!()
+    }
+
+    pub fn camera_position(&self) -> glam::Vec3 {
+        glam::Vec3 { 
+            x: self.T_world_camera[0], 
+            y: self.T_world_camera[1], 
+            z: self.T_world_camera[2] }
+    }
+
+    pub fn camera_quaternion(&self) -> glam::Quat {
+        glam_quat([
+            self.T_world_camera[3],         // quat W
+            self.T_world_camera[4],         // quat X
+            self.T_world_camera[5],         // quat Y
+            self.T_world_camera[6]          // quat Z
+        ])
     }
 }
 
