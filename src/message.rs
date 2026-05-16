@@ -8,11 +8,11 @@ type debug_field = bool; // Current debug item to indicate a field that should b
 
 
 pub struct ImageRequest {
-    request_id: u64,                    //  FIXME Unique id (hash? integer? Integer means overflow problem. Check later.)
-    timestamp: Instant,             //  Timestamp from time lib
-    camera_id: debug_field,             //  FIXME ID associated with camera? Unclear what this means. Maybe investigate transmitting camera lens data with JSON request.
-    T_world_camera: [f32; 7],        // Camera transform. +X forward, +Z up. Quaternion configuration: [qw qx qy qz]
-    intrinsics: debug_field,            // FIXME Pinhole camera intrinsics. Not sure what this refers to. FOV/other camera properties? Double check
+    request_id: u64,                        //  FIXME Unique id (hash? integer? Integer means overflow problem. Check later.)
+    timestamp: Instant,                     //  Timestamp from time lib
+    camera_id: debug_field,                 //  FIXME ID associated with camera? Unclear what this means. Maybe investigate transmitting camera lens data with JSON request.
+    T_world_camera: [f32; 7],               // Camera transform. +X forward, +Z up. Quaternion configuration: [qw qx qy qz]
+    intrinsics: debug_field,                // FIXME Pinhole camera intrinsics. Not sure what this refers to. FOV/other camera properties? Double check
 }
 
 impl ImageRequest {
@@ -58,14 +58,14 @@ impl Default for ImageRequest {
 }
 
 struct ImageResponse {
-    request_id: u64,                    // Matching request ID from Image request
-    timestamp: Instant,                 // Server completion time
-    image_path: String,            // Resultant Image Path
-    width: u64,                         // Image width in pixels
-    height: u64,                        // Image height in pixels
-    dtype: debug_field,                  // Image type
-    stride: debug_field,                // FIXME: No idea. 
-    render_latency_us: u64,             // Server render latency in us
+    request_id: u64,                        // Matching request ID from Image request
+    timestamp: Instant,                     // Server completion time
+    image_path: String,                     // Resultant Image Path
+    width: u64,                             // Image width in pixels
+    height: u64,                            // Image height in pixels
+    dtype: debug_field,                     // Image type
+    stride: debug_field,                    // FIXME: No idea. 
+    render_latency_us: u64,                 // Server render latency in us
 }
 
 impl ImageResponse {

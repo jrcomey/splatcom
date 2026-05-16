@@ -2,6 +2,7 @@ use anyhow::Result;
 use serde_json;
 use interprocess;
 use glam;
+use image;
 mod util;
 mod message;
 
@@ -25,6 +26,10 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
     let splats = util::load_ply_file(&path, None).await?;
     info!("Loaded {} splats from {path}", splats.num_splats());
 
+    info!("Rendering...");
+
+    util::render(splats).await;
+    info!("Done!");
     Ok(())
 }
 

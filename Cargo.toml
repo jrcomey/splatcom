@@ -13,7 +13,7 @@ env_logger = "0.10"
 log = "0.4.29"
 glam = { version = "0.30", features = ["serde"] }
 anyhow = "1.0.102"
-
+image = "0.25.10"
 
 # `webgpu` + `extension` give us `burn::backend::wgpu::WgpuDevice` and the
 # `burn::backend` module brush expects; `metal` matches brush's own enabled
