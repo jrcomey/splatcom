@@ -9,7 +9,7 @@ struct ImageRequest {
     request_id: u64,                    //  FIXME Unique id (hash? integer? Integer means overflow problem. Check later.)
     timestamp: Instant,             //  Timestamp from time lib
     camera_id: debug_field,             //  FIXME ID associated with camera? Unclear what this means. Maybe investigate transmitting camera lens data with JSON request.
-    T_world_camera: debug_field,        // Camera transform. +X forward, +Z up. Quaternion configuration: [qw qx qy qz]
+    T_world_camera: [f64; 7],        // Camera transform. +X forward, +Z up. Quaternion configuration: [qw qx qy qz]
     intrinsics: debug_field,            // FIXME Pinhole camera intrinsics. Not sure what this refers to. FOV/other camera properties? Double check
 }
 
@@ -32,7 +32,7 @@ impl Default for ImageRequest {
             request_id: 0, 
             timestamp: Instant::now(), 
             camera_id: false, 
-            T_world_camera: false, 
+            T_world_camera: [0.0; 7], 
             intrinsics: false 
         }
     }
