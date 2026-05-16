@@ -88,7 +88,7 @@ pub async fn render(
         glam::Vec2::new(0.5, 0.5),
     );
 
-    let img_size   = glam::UVec2::new(1920, 1080);
+    let img_size   = glam::UVec2::new(800*3, 600*3);
     let background = glam::Vec3::ZERO;
 
 
@@ -102,7 +102,7 @@ pub async fn render(
     // ).await;
 
     let center = glam::Vec3::ZERO;       // or wherever your bounds said
-    let dist = 5.0;                       // or your extent
+    let dist = extent;                       // or your extent
     let positions = [
         ( "pos_z",  glam::Vec3::new(0.0,  0.0,  dist)),
         ( "neg_z",  glam::Vec3::new(0.0,  0.0, -dist)),
@@ -115,7 +115,7 @@ pub async fn render(
     for (name, pos) in positions {
         let forward = (center - pos).normalize();
         let rotation = glam::Quat::from_rotation_arc(glam::Vec3::Z, forward);
-        let cam = brush_render::camera::Camera::new(pos, rotation, 45f64.to_radians(), 45f64.to_radians(),
+        let cam = brush_render::camera::Camera::new(pos, rotation, 90f64.to_radians(), 60f64.to_radians(),
                             glam::Vec2::new(0.5, 0.5));
         let (img, _aux) = brush_render::render_splats(splats.clone(), &cam, img_size, glam::Vec3::ZERO, None, brush_render::TextureMode::Float).await;
         let tensor_raw = img.into_data();
