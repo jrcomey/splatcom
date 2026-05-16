@@ -6,6 +6,8 @@ use image;
 mod util;
 mod message;
 
+use message as msg;
+
 extern crate pretty_env_logger;
 extern crate env_logger;
 extern crate log;
@@ -26,9 +28,23 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
     let splats = util::load_ply_file(&path, None).await?;
     info!("Loaded {} splats from {path}", splats.num_splats());
 
-    info!("Rendering...");
+    // Create ImageRequest queue
+    let mut buffer: std::collections::VecDeque<msg::ImageRequest> = std::collections::VecDeque::new();
+    let sample_request = msg::ImageRequest::null();
+    buffer.push_back(sample_request.clone());
+    buffer.push_back(sample_request.clone());
+    buffer.push_back(sample_request.clone());
+    buffer.push_back(sample_request.clone());
+    buffer.push_back(sample_request.clone());
 
-    util::render(splats).await;
+    info!("Beginning render loop...");
+
+    while let Some(request) = buffer.pop_front() {
+        util::render(request, splats.clone()).await;
+    }
+
+    
+    
     info!("Done!");
     Ok(())
 }
