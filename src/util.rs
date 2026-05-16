@@ -5,6 +5,7 @@ use brush_render::gaussian_splats::{self, SplatRenderMode, Splats};
 use brush_serde::load_splat_from_ply;
 use burn::backend::wgpu::WgpuDevice;
 use burn::tensor::Device;
+use log::*;
 use tokio::io::BufReader;
 
 use crate::message;
@@ -57,6 +58,9 @@ pub async fn render(
 
     let tensor_raw = image_tensor.into_data();
     let floats: Vec<f32> = tensor_raw.to_vec().expect("expected f32 tensor");
+
+    debug!("Size of output in floats: {}", floats.len());
+    debug!("Expected for RGBA: {}", 1000*1000*3);
 
     let img_buffer: Vec<u8> = floats.iter()
         .map(|f| (f.clamp(0.0, 1.0) * 255.0) as u8)
