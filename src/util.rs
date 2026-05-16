@@ -9,7 +9,7 @@ use tokio::io::BufReader;
 
 use crate::message;
 
-/// AI: Load a 3D Gaussian splat scene from a `.ply` file on disk.
+/// AI Function: Load a 3D Gaussian splat scene from a `.ply` file on disk.
 ///
 /// `subsample_points` keeps approximately N points (passed straight through to
 /// `brush_serde`); `None` keeps all of them.
@@ -45,9 +45,16 @@ pub fn render(request: message::ImageRequest, splats: Splats) {
     //     splat_scale, 
     //     texture_mode
     // );
-
-
-
     
+}
+
+/// Helper function to construct quaternions from different convention
+pub fn glam_quat(init_quat: [f32; 4]) -> glam::Quat {
     
+    glam::Quat::from_array([
+        init_quat[1], 
+        init_quat[2], 
+        init_quat[3], 
+        init_quat[0], 
+    ])
 }
