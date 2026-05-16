@@ -1,6 +1,9 @@
+use std::str::FromStr;
 use std::time::Instant;
 use std::collections::VecDeque;
 use crate::util::glam_quat;
+use serde::Deserialize;
+use serde_json;
 
 
 type debug_field = bool; // Current debug item to indicate a field that should be replaced later.
@@ -11,10 +14,10 @@ type debug_field = bool; // Current debug item to indicate a field that should b
 //     buffer: VecDeque<ImageRequest>,
 // }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize)]
 pub struct ImageRequest {
     request_id: u64,                        //  FIXME Unique id (hash? integer? Integer means overflow problem. Check later.)
-    timestamp: Instant,                     //  Timestamp from time lib
+    timestamp: String,                     //  Timestamp from time lib
     camera_id: debug_field,                 //  FIXME ID associated with camera? Unclear what this means. Maybe investigate transmitting camera lens data with JSON request.
     T_world_camera: [f32; 7],               // Camera transform. +X forward, +Z up. Quaternion configuration: [qw qx qy qz]
     intrinsics: debug_field,                // FIXME Pinhole camera intrinsics. Not sure what this refers to. FOV/other camera properties? Double check
@@ -31,10 +34,25 @@ impl ImageRequest {
         ImageRequest { ..Default::default()}
     }
 
-    /// Takes in a recieved JSON string and attempts to parse it into an image request. Returns an error if the JSON is incomplete or contains bad information.
-    pub fn new_from_json() -> Result<Self, Box<dyn std::error::Error>> {
-        todo!()
-    }
+    // /// Takes in a recieved JSON string and attempts to parse it into an image request. Returns an error if the JSON is incomplete or contains bad information.
+    // pub fn new_from_json(json_str: String) -> Result<Self, Box<dyn std::error::Error>> {
+    //     let json_parsed = serde_json::Value::from_str(&json_str)?;
+
+    //     // Pull request ID
+    //     let id = if let Some(id) = json_parsed.get("id") {
+    //         id
+    //     } else {
+    //         return Err(std::fmt::Error);
+    //     };
+
+    //     // Pull client send time
+
+    //     // Pull camera ID (nothing for now)
+
+    //     // Pull 
+
+    //     todo!()
+    // }
 
     pub fn get_camera_position(&self) -> glam::Vec3 {
         glam::Vec3 { 
@@ -64,7 +82,7 @@ impl Default for ImageRequest {
     fn default() -> Self {
         ImageRequest {
             request_id: 0, 
-            timestamp: Instant::now(), 
+            timestamp: "".to_string(), 
             camera_id: false, 
             T_world_camera: [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], 
             intrinsics: false 

@@ -2,7 +2,7 @@ use std::path::Path;
 
 use anyhow::Result;
 use brush_render::gaussian_splats::{self, SplatRenderMode, Splats};
-use brush_async::AsyncMap;
+// use brush_async::AsyncMap;
 use brush_serde::load_splat_from_ply;
 use burn::backend::wgpu::WgpuDevice;
 use burn::tensor::Device;

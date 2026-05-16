@@ -5,7 +5,8 @@ use glam;
 use image;
 mod util;
 mod message;
-
+use std::collections::VecDeque;
+use std::sync::{Arc, RwLock};
 use message as msg;
 
 extern crate pretty_env_logger;
@@ -29,17 +30,18 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
     info!("Loaded {} splats from {path}", splats.num_splats());
 
     // Create ImageRequest queue
-    let mut buffer: std::collections::VecDeque<msg::ImageRequest> = std::collections::VecDeque::new();
+    let buffer: Arc<RwLock<VecDeque<msg::ImageRequest>>> = Arc::new(RwLock::new(VecDeque::new()));
     let sample_request = msg::ImageRequest::null();
-    buffer.push_back(sample_request.clone());
-    buffer.push_back(sample_request.clone());
-    buffer.push_back(sample_request.clone());
-    buffer.push_back(sample_request.clone());
-    buffer.push_back(sample_request.clone());
+    buffer.write().unwrap().push_back(sample_request.clone());
+    buffer.write().unwrap().push_back(sample_request.clone());
+    buffer.write().unwrap().push_back(sample_request.clone());
+    buffer.write().unwrap().push_back(sample_request.clone());
+    buffer.write().unwrap().push_back(sample_request.clone());
 
     info!("Beginning render loop...");
 
-    while let Some(request) = buffer.pop_front() {
+    while let Some(r) = buffer.read().unwrap().front() {
+        let request = buffer.write().unwrap().pop_front().unwrap();
         util::render(request, splats.clone()).await;
     }
 
@@ -65,4 +67,35 @@ async fn main() -> Result<()> {
     run_server(&path).await?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::message::ImageRequest;
+
+    use super::*;
+    #[test]
+    fn load_json() {
+        let img: Result<ImageRequest, _> = serde_json::from_str(r#"{
+        "request_id": 15,
+        "timestamp" : "asdasas",
+        "camera_id" : false,
+        "T_world_camera" : [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+        "intrinsics" : false
+    }"#);
+        assert!(img.is_ok(), "Failed to produce image request from JSON!");
+    }
+
+    #[test]
+    #[should_panic(expected="Failed to produce image request from JSON!")]
+    fn wrong_json_size() {
+        let img: Result<ImageRequest, _> = serde_json::from_str(r#"{
+        "request_id": 15,
+        "timestamp" : "asdasas",
+        "camera_id" : false,
+        "T_world_camera" : [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+        "intrinsics" : false
+    }"#);
+        assert!(img.is_ok(), "Failed to produce image request from JSON!");
+    }
 }
