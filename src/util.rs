@@ -1,10 +1,24 @@
-use brush_render::{*, gaussian_splats::Splats};
-use anyhow;
-type Backend = brush_render::MainBackend;
+use std::path::Path;
 
+use anyhow::Result;
+use brush_render::gaussian_splats::{SplatRenderMode, Splats};
+use brush_serde::load_splat_from_ply;
+use burn::backend::wgpu::WgpuDevice;
+use burn::tensor::Device;
+use tokio::io::BufReader;
 
-fn load_ply_file(filepath: std::path::PathBuf) -> anyhow::Result<Backend> {
+/// AI: Load a 3D Gaussian splat scene from a `.ply` file on disk.
+///
+/// `subsample_points` keeps approximately N points (passed straight through to
+/// `brush_serde`); `None` keeps all of them.
+pub async fn load_ply_file(filepath: impl AsRef<Path>, subsample_points: Option<u32>,
+) -> Result<Splats> {
+    let file = tokio::fs::File::open(filepath.as_ref()).await?;
+    let reader = BufReader::new(file);
 
+    let msg = load_splat_from_ply(reader, subsample_points).await?;
+    let device: Device = WgpuDevice::default().into();
+    let mode = msg.meta.render_mode.unwrap_or(SplatRenderMode::Default);
 
-    todo!()
+    Ok(msg.data.into_splats(&device, mode))
 }
