@@ -1,9 +1,10 @@
 use anyhow::Result;
 use serde_json;
+use interprocess;
 mod util;
 mod message;
 
-fn run_server() {
+fn run_server(filepath: &str) {
 
     // Broad architecture layout:
         // Load file
@@ -12,10 +13,15 @@ fn run_server() {
             // In parallel? Have to figure out how that works on apple silicon with shared memory
         // Complete responses, dump in completed requests pile/heap/something
         // Drain responses in whatever means is actually necessary
+
+    util::load_ply_file(filepath, None);
 }
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
+
+    let args: Vec<String> = std::env::args().collect();
+    run_server(&args[0]);
 
 
     // Some AI loading code that I'm not using but it generated anyway
