@@ -2,7 +2,25 @@
 
 Single-client gaussian splat rendering process designed to provide simulated camera data for simulation use.
 
+## Usage
 
+Simply call the splatcom executable with the relative filepath of the .ply file you need to render. E.g.
+
+```bash
+cargo r -- data/construction_site.ply
+```
+
+## Dependencies
+
+Below is a list of dependencies and the reasons they are included:
+
+* `brush-render` | Rendering crate from `brush`
+* `brush-render` | IO crate from `brush`
+* `serde-json` | JSON parser
+* `interprocess` | Flexible handling for IPC, explained below
+* `log/env_logger/pretty_env_logger` | crate for handling logging statements
+* `glam` | Vector graphics library used by `brush`
+* `anyhow` | multipurpose error handling crate
 
 ## IPC Choices and Usage
 
