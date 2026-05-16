@@ -1,8 +1,15 @@
 use anyhow::Result;
 use serde_json;
 use interprocess;
+use glam;
 mod util;
 mod message;
+
+extern crate pretty_env_logger;
+extern crate env_logger;
+extern crate log;
+
+use log::*;
 
 fn run_server(filepath: &str) {
 
@@ -19,21 +26,20 @@ fn run_server(filepath: &str) {
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
+    unsafe {
+        std::env::set_var("RUST_LOG", "splatcom=trace,warn cargo run"); // Initialize logger
+    }
+    pretty_env_logger::init();
+    let mut args = std::env::args().skip(1);
 
-    let args: Vec<String> = std::env::args().collect();
-    run_server(&args[0]);
+    let Some(path) = args.next() else {
+        error!("usage: splatcom <path-to-ply>");
+        return Ok(());
+    };
 
-
-    // Some AI loading code that I'm not using but it generated anyway
-    // let mut args = std::env::args().skip(1);
-
-    // let Some(path) = args.next() else {
-    //     eprintln!("usage: splatcom <path-to-ply>");
-    //     return Ok(());
-    // };
-
-    // let splats = util::load_ply_file(&path, None).await?;
-    // println!("Loaded {} splats from {path}", splats.num_splats());
+    info!("Loading {}...", path);
+    let splats = util::load_ply_file(&path, None).await?;
+    info!("Loaded {} splats from {path}", splats.num_splats());
 
     Ok(())
 }
