@@ -4,6 +4,15 @@ import json
 from datetime import datetime, timezone
 
 
+# brush is COLMAP convention:
+#   camera-local +X = right, +Y = down, +Z = forward
+#   T_world_camera rotation = camera-to-world (cam-local axes in world)
+#   natural world up = -Y (matches brush-app's camera_controls)
+_SPHERE_CENTER = (-6.285185-3, -5.5856934-3, -14.807054-2)
+_LOOK_AT_CENTER = (-6.285185, -5.5856934, -14.807054)
+_WORLD_UP = (0.0, 0.0, 1.0)
+
+
 def make_image_request(
     request_id: int,
     T_world_camera: list[float],
@@ -21,36 +30,40 @@ def make_image_request(
     }
 
 
-def look_at_origin_quat(pos: tuple[float, float, float]) -> tuple[float, float, float, float]:
-    """Quaternion [qw, qx, qy, qz] orienting a +X-forward, +Z-up camera at `pos`
-    so that +X points toward the origin."""
-    x, y, z = pos
-    n = math.sqrt(x * x + y * y + z * z)
-    if n == 0.0:
+def look_at_quat(
+    eye: tuple[float, float, float],
+    target: tuple[float, float, float],
+    world_up: tuple[float, float, float] = _WORLD_UP,
+) -> tuple[float, float, float, float]:
+    """Cam-to-world quaternion [qw, qx, qy, qz] aiming a COLMAP camera
+    (+X right, +Y down, +Z forward) at `target` from `eye`."""
+    fx, fy, fz = target[0] - eye[0], target[1] - eye[1], target[2] - eye[2]
+    fn = math.sqrt(fx * fx + fy * fy + fz * fz)
+    if fn == 0.0:
         return (1.0, 0.0, 0.0, 0.0)
-    fx, fy, fz = -x / n, -y / n, -z / n  # forward = toward origin
+    fx, fy, fz = fx / fn, fy / fn, fz / fn
 
-    world_up = (0.0, 0.0, 1.0)
-    # If forward is parallel to world_up, pick another up reference.
-    if abs(fz) > 0.999:
-        world_up = (0.0, 1.0, 0.0)
+    ux, uy, uz = world_up
+    # forward colinear with world_up — pick any perpendicular fallback.
+    if abs(fx * ux + fy * uy + fz * uz) > 0.999:
+        ux, uy, uz = (0.0, 0.0, 1.0) if abs(uz) < 0.5 else (1.0, 0.0, 0.0)
 
-    # left = world_up x forward  (Y axis in right-handed X-fwd, Z-up frame)
-    lx = world_up[1] * fz - world_up[2] * fy
-    ly = world_up[2] * fx - world_up[0] * fz
-    lz = world_up[0] * fy - world_up[1] * fx
-    ln = math.sqrt(lx * lx + ly * ly + lz * lz)
-    lx, ly, lz = lx / ln, ly / ln, lz / ln
+    # right = normalize(forward x world_up); RHR with +X right, +Y down, +Z fwd.
+    rx = fy * uz - fz * uy
+    ry = fz * ux - fx * uz
+    rz = fx * uy - fy * ux
+    rn = math.sqrt(rx * rx + ry * ry + rz * rz)
+    rx, ry, rz = rx / rn, ry / rn, rz / rn
 
-    # up = forward x left  (Z axis)
-    ux = fy * lz - fz * ly
-    uy = fz * lx - fx * lz
-    uz = fx * ly - fy * lx
+    # down = forward x right
+    dx = fy * rz - fz * ry
+    dy = fz * rx - fx * rz
+    dz = fx * ry - fy * rx
 
-    # Rotation matrix columns: X=forward, Y=left, Z=up
-    m00, m01, m02 = fx, lx, ux
-    m10, m11, m12 = fy, ly, uy
-    m20, m21, m22 = fz, lz, uz
+    # R_c2w columns: right (cam +X), down (cam +Y), forward (cam +Z)
+    m00, m01, m02 = rx, dx, fx
+    m10, m11, m12 = ry, dy, fy
+    m20, m21, m22 = rz, dz, fz
 
     trace = m00 + m11 + m22
     if trace > 0.0:
@@ -80,25 +93,39 @@ def look_at_origin_quat(pos: tuple[float, float, float]) -> tuple[float, float, 
     return (qw, qx, qy, qz)
 
 
-def fibonacci_sphere(n: int, radius: float) -> list[tuple[float, float, float]]:
-    """Roughly even point distribution on a sphere of `radius`."""
+def fibonacci_sphere(
+    n: int,
+    radius: float,
+    center: tuple[float, float, float] = _SPHERE_CENTER,
+) -> list[tuple[float, float, float]]:
+    """Roughly even point distribution on a sphere of `radius` around `center`."""
     points = []
     phi = math.pi * (3.0 - math.sqrt(5.0))  # golden angle
     for i in range(n):
         y = 1.0 - (i / max(n - 1, 1)) * 2.0
         r = math.sqrt(max(0.0, 1.0 - y * y))
         theta = phi * i
-        points.append((radius * math.cos(theta) * r, radius * y, radius * math.sin(theta) * r))
+        points.append((
+            radius * math.cos(theta) * r + center[0],
+            radius * y + center[1],
+            radius * math.sin(theta) * r + center[2],
+        ))
     return points
 
 
-async def send_one(request_id: int, pos: tuple[float, float, float], sock_path: str) -> None:
-    qw, qx, qy, qz = look_at_origin_quat(pos)
+async def send_one(
+    request_id: int,
+    pos: tuple[float, float, float],
+    target: tuple[float, float, float],
+    host: str,
+    port: int,
+) -> None:
+    qw, qx, qy, qz = look_at_quat(pos, target)
     req = make_image_request(
         request_id=request_id,
         T_world_camera=[pos[0], pos[1], pos[2], qw, qx, qy, qz],
     )
-    _reader, writer = await asyncio.open_unix_connection(sock_path)
+    _reader, writer = await asyncio.open_connection(host, port)
     try:
         writer.write((json.dumps(req) + '\n').encode())
         await writer.drain()
@@ -110,13 +137,20 @@ async def send_one(request_id: int, pos: tuple[float, float, float], sock_path: 
             pass
 
 
-async def send_sphere(radius: float, n_points: int, sock_path: str = '/tmp/splatcom.sock') -> None:
+async def send_sphere(
+    radius: float,
+    n_points: int,
+    sphere_center: tuple[float, float, float] = _SPHERE_CENTER,
+    look_at_center: tuple[float, float, float] = _LOOK_AT_CENTER,
+    host: str = '127.0.0.1',
+    port: int = 8080,
+) -> None:
     tasks = [
-        asyncio.create_task(send_one(i, pos, sock_path))
-        for i, pos in enumerate(fibonacci_sphere(n_points, radius))
+        asyncio.create_task(send_one(i, pos, look_at_center, host, port))
+        for i, pos in enumerate(fibonacci_sphere(n_points, radius, sphere_center))
     ]
     await asyncio.gather(*tasks)
 
 
 if __name__ == '__main__':
-    asyncio.run(send_sphere(radius=5.0, n_points=64))
+    asyncio.run(send_sphere(radius=10.0, n_points=64))
