@@ -1,9 +1,9 @@
 use anyhow::Result;
 // use interprocess::local_socket::traits::ListenerExt;
-use interprocess::local_socket::traits::tokio::Listener;
-use interprocess::local_socket::{GenericNamespaced, ListenerOptions, ToNsName};
+// use interprocess::local_socket::traits::tokio::Listener;
+// use interprocess::local_socket::{GenericNamespaced, ListenerOptions, ToNsName};
 use serde_json;
-use interprocess;
+// use interprocess;
 use glam;
 use image;
 mod util;
@@ -12,6 +12,7 @@ use std::collections::VecDeque;
 // use std::io::{BufRead, BufReader};
 // use tokio::io::BufReader;
 use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::net::TcpListener;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
@@ -50,13 +51,14 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
     let inbox_ipc = inbox.clone(); // Free clone of ref
     let shutdown_flag_ipc = shutdown_flag.clone();
     tokio::spawn(async move {
-        // Spawn socket for a single client
-        let namespace = "splatcom.sock".to_ns_name::<GenericNamespaced>().unwrap();
-        let listener = ListenerOptions::new().name(namespace).create_tokio().unwrap();
+        // Spawn socket for a single client, check if there's an env set from docker or no
+        let bind_addr = std::env::var("BIND_ADDR").unwrap_or_else(|_| "127.0.0.1:8080".into());
+        let listener = TcpListener::bind(&bind_addr).await.unwrap();
+        info!("listening on {bind_addr}");
 
         loop {
-            let connection = match listener.accept().await {
-                Ok(conn) => conn,
+            let (stream, socket) = match listener.accept().await {
+                Ok(conn) => (conn.0, conn.1),
                 _ => continue,
             };
 
@@ -65,11 +67,13 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
             }
 
             let inbox_ipc_clone = inbox_ipc.clone();
+            // let (read_half, mut write_half) = connection.into_split();
             tokio::spawn(
                 async move {
-                    let mut connection = BufReader::new(connection);
+                    let (read_half, mut write_half) = stream.into_split();
+                    let mut read_half = BufReader::new(read_half);
                     let mut incoming_json = String::new();
-                    connection.read_line(&mut incoming_json).await;
+                    read_half.read_line(&mut incoming_json).await.unwrap();
                     if let Ok(request) = serde_json::from_str::<msg::ImageRequest>(&incoming_json) {
                         // Build job, send to buffer, reply to connection with response
                         info!("Recieved request {}!", request.get_id());
@@ -81,34 +85,6 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
                 }
             );
         }
-
-        // Create a new tokio thread per incoming request. If it's valid, build the job, send to the buffer, and await the response. When you recieve the response, reply with image
-        // for connection in listener.incoming().filter_map(|conn| conn.ok()){
-        //     if shutdown_flag_ipc.load(Ordering::Relaxed) {
-        //         info!("Terminating IPC loop");
-        //         break;
-        //     }
-        //     let inbox_ipc_clone = inbox_ipc.clone();
-        //     tokio::spawn(
-        //         async move {
-        //             let mut connection = BufReader::new(connection);
-        //             let mut incoming_json = String::new();
-        //             connection.read_line(&mut incoming_json).unwrap();
-        //             if let Ok(request) = serde_json::from_str::<msg::ImageRequest>(&incoming_json) {
-        //                 // Build job, send to buffer, reply to connection with response
-        //                 info!("Recieved request {}!", request.get_id());
-        //                 let (job_tx, job_rx) = tokio::sync::oneshot::channel::<msg::ImageResponse>();
-        //                 inbox_ipc_clone.write().unwrap().push_back(msg::RenderJob::new(request, job_tx));
-        //                 let job_done: ImageResponse = job_rx.blocking_recv().unwrap();
-        //                 // TODO Reply
-        //             }
-        //         }
-                
-        //     );
-        //     // if *shutdown_flag.read().unwrap() {
-        //     //     drop(listener);
-        //     // }
-        // }
     });
 
     info!("Beginning render loop...");
