@@ -1,3 +1,4 @@
+#![allow(warnings)] 
 use anyhow::Result;
 use serde_json;
 use std::collections::VecDeque;
