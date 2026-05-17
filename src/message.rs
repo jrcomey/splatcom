@@ -35,7 +35,7 @@ pub struct ImageRequest {
     timestamp: String,                      //  Timestamp from chrono, in UTC format (RFC3339 format)
     camera_id: debug_field,                 //  Camera ID, if needed on the client end
     T_world_camera: [f32; 7],               //  Camera transform. +X forward, +Z up. Quaternion configuration: [qw qx qy qz]
-    intrinsics: debug_field,                //  FIXME Pinhole camera intrinsics. Not sure what this refers to. FOV/other camera properties? Double check
+    intrinsics: [f32; 4],                   //  Camera properties [FOV X, FOV Y, pinhole x, pinhole y]. Pinhole numbers between 0 and 1, FOV in degrees
 }
 
 impl ImageRequest {
@@ -75,6 +75,14 @@ impl ImageRequest {
     pub fn get_timestamp(&self) -> &str {
         &self.timestamp
     }
+
+    pub fn get_camera_fov(&self) -> (f32, f32) {
+        (self.intrinsics[0], self.intrinsics[1])
+    }
+
+    pub fn get_pinhole_property(&self) -> (f32, f32) {
+        (self.intrinsics[2], self.intrinsics[3])
+    }
 }
 
 
@@ -86,7 +94,7 @@ impl Default for ImageRequest {
             timestamp: "".to_string(), 
             camera_id: false, 
             T_world_camera: [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], 
-            intrinsics: false 
+            intrinsics: [90.0, 60.0, 0.5, 0.5] 
         }
     }
 }
@@ -100,14 +108,14 @@ pub struct ImageResponse {
     width: u64,                             // Image width in pixels
     height: u64,                            // Image height in pixels
     dtype: String,                          // Image type
-    stride: debug_field,                    // FIXME: No idea. 
+    stride: u64,                            // Image offset
     render_latency_us: i64,                 // Server render latency in us
 }
 
 impl ImageResponse {
     // Basic constructor
     pub fn new(request_id: u64, time: &str, image_path: String, width: u64, height: u64, dtype: &str, latency_time_us: i64) -> Self {
-        ImageResponse { request_id, timestamp: time.to_string(), image_path, width, height, dtype: dtype.to_string(), stride: false, render_latency_us: latency_time_us}
+        ImageResponse { request_id, timestamp: time.to_string(), image_path, width, height, dtype: dtype.to_string(), stride: 0, render_latency_us: latency_time_us}
     }
 }
 
@@ -121,7 +129,7 @@ impl Default for ImageResponse {
             width: 0, 
             height: 0,
             dtype: "png".to_string(),
-            stride: false,
+            stride: 0,
             render_latency_us: 0 }
     }
 }

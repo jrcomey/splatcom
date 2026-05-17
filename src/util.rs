@@ -22,13 +22,15 @@ pub async fn render(request: &message::ImageRequest, splats: Splats) -> tokio::i
     // Construct Brush Camera from properties
     let position = request.get_camera_position();
     let rotation = request.get_camera_quaternion();
+    let (fov_x, fov_y) = request.get_camera_fov();
+    let (pinhole_x, pinhole_y) = request.get_pinhole_property();
 
     let camera = brush_render::camera::Camera::new(
         position,
         rotation,
-        90.0_f64.to_radians(),
-        60.0_f64.to_radians(),
-        glam::Vec2::new(0.5, 0.5),
+        (fov_x as f64).to_radians(),
+        (fov_y as f64).to_radians(),
+        glam::Vec2::new(pinhole_x, pinhole_y),
     );
 
     // Hardcoded image size for now
