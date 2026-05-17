@@ -57,6 +57,7 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
                     connection.read_line(&mut incoming_json).unwrap();
                     if let Ok(request) = serde_json::from_str::<msg::ImageRequest>(&incoming_json) {
                         // Build job, send to buffer, reply to connection with response
+                        info!("Recieved request {}!", request.get_id());
                         let (job_tx, job_rx) = std::sync::mpsc::channel::<msg::ImageResponse>();
                         inbox_ipc_clone.write().unwrap().push_back(msg::RenderJob::new(request, job_tx));
                         let job_done: ImageResponse = job_rx.recv().unwrap();
@@ -72,10 +73,13 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
 
     // Main rendering loop
     loop { 
-        while let Some(r) = inbox.read().unwrap().front() {
-            let job = inbox.write().unwrap().pop_front().unwrap();
-            util::render(job.get_request(), splats.clone()).await;
-        }
+        
+            let job = inbox.write().unwrap().pop_front();
+            match job {
+                Some(job) => util::render(job.get_request(), splats.clone()).await,
+                _ => tokio::task::yield_now().await,
+            }
+
     }
     
     info!("Done!");
