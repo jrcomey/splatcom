@@ -19,7 +19,8 @@ docker run --rm -v "$(pwd)/data:/data:ro" -p 127.0.0.1:8080:8080 splatcom /data/
 
 Assuming your model is located in the `data/` directory. 
 
-NOTE: The containerization is untested. This server was developed on macOS, and there is no compatibility layer for calls to the M4 GPU from a Linux image. It should work on any other hardware, but is untested. 
+NOTE: The containerization is untested. This server was developed on macOS, and there is no compatibility layer for calls to the M4 GPU from a Linux image. It should work on any other hardware, but *is* untested. 
+
 ## Dependencies
 
 Below is a list of dependencies and the reasons they are included:
@@ -42,6 +43,14 @@ Below is a list of dependencies and the reasons they are included:
 ### Message Passing
 
 I have chosen to utilize JSON for the time being. Protobuf is a better choice for performance, but I'm currently more familiar with JSON and the `serde-json` library, and will use that at the start of the development cycle. Switching between JSON and Protobuf would be relatively simple in future, but would cause breaking changes (assuming we're not going to have both message passing systems be backwards compatible)
+
+### General Program Structure
+
+`splatcom` uses two main threads: one handles network I/O, and the other is the primary rendering loop.
+
+The network thread starts a TCP listener and awaits incoming image request packets. The packets are deserialized using `serde-json`, and pushed to an image request buffer as they are received. Each incoming packet uses its own `tokio` thread, which prevents blockage while creating minimal overhead. Each job is sent with a `tokio` oneshot reply channel (essentially a consumable `mpsc` thread transmission channel) which returns the `ImageResponse` with render metrics and the delivered file location. The resultant packet is then transmitted back on the same listener thread.
+
+The primary render loop uses `brush` as a rendering backend. Splats are loaded with `brush`'s gaussain splat backend, and stored in VRAM. Camera position, rotation, and other characteristics such as FOV are transmitted with the image request, and used in the primary render call. The resultant tensor is processed from floats into RGBA, saved to file, and the metrics are returned to the I/O thread.
 
 ## AI Usage
 
