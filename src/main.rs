@@ -1,31 +1,24 @@
 use anyhow::Result;
-// use interprocess::local_socket::traits::ListenerExt;
-// use interprocess::local_socket::traits::tokio::Listener;
-// use interprocess::local_socket::{GenericNamespaced, ListenerOptions, ToNsName};
 use serde_json;
-// use interprocess;
-// use glam;
-// use image;
-mod util;
-mod message;
 use std::collections::VecDeque;
-// use std::io::{BufRead, BufReader};
-// use tokio::io::BufReader;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::net::TcpListener;
-
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, RwLock};
-use message as msg;
-
-extern crate pretty_env_logger;
-extern crate env_logger;
-extern crate log;
-
+use tokio::{
+    io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
+    net::TcpListener
+};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    {Arc, RwLock}
+};
+use pretty_env_logger;
+use env_logger;
 use log::*;
 
-use crate::message::ImageResponse;
+mod util;
+mod message;
+use message as msg;
 
+
+/// Runs the primary render loop. Recieves image requests aysnchronously, generates the images by pulling requests from the queue, and 
 async fn run_server(path: &str) -> Result<(), anyhow::Error> {
 
     // Broad architecture layout:
@@ -80,7 +73,7 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
                         let (job_tx, mut job_rx) = tokio::sync::oneshot::channel::<msg::ImageResponse>();
                         // Send job to buffer, wait for reply
                         inbox_ipc_clone.write().unwrap().push_back(msg::RenderJob::new(request, job_tx));
-                        let job_done: ImageResponse = job_rx.await.unwrap();
+                        let job_done: msg::ImageResponse = job_rx.await.unwrap();
 
                         // Send reply JSON to client
                         let str_reply = serde_json::to_string(&job_done).unwrap();
@@ -98,6 +91,7 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
 
     // Main rendering loop
     loop {
+        // Shutdown server, otherwise continue checking buffer
         tokio::select! {
             biased;
             _ = &mut ctrl_c => {

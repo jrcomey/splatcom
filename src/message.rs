@@ -1,21 +1,13 @@
-use std::str::FromStr;
-use std::time::Instant;
-use std::collections::VecDeque;
+#[allow(non_snake_case)]
 use crate::util::glam_quat;
 use serde::{Deserialize, Serialize};
-use serde_json;
 use log::*;
 use tokio::sync::oneshot;
-use chrono;
+
 
 
 type debug_field = bool; // Current debug item to indicate a field that should be replaced later.
 
-
-// /// Buffer of Image Requests
-// pub struct RequestBuffer {
-//     buffer: VecDeque<ImageRequest>,
-// }
 
 pub struct RenderJob {
     request: ImageRequest,
@@ -36,6 +28,7 @@ impl RenderJob {
     }
 }
 
+/// Image request struct, recieved over network as JSON
 #[derive(Clone, Deserialize)]
 pub struct ImageRequest {
     request_id: u64,                        //  Unique id (hash? integer? Integer means overflow problem. Check later.)
@@ -48,6 +41,7 @@ pub struct ImageRequest {
 impl ImageRequest {
 
 
+    /// Returns camera position
     pub fn get_camera_position(&self) -> glam::Vec3 {
         glam::Vec3 { 
             x: self.T_world_camera[0], 
@@ -55,6 +49,7 @@ impl ImageRequest {
             z: self.T_world_camera[2] }
     }
 
+    /// Returns camera quaternion. Handles all zero edge case
     pub fn get_camera_quaternion(&self) -> glam::Quat {
 
         let mut quat = glam_quat([
@@ -71,10 +66,12 @@ impl ImageRequest {
         quat.normalize() 
     }
 
+    /// Returns id of image request
     pub fn get_id(&self) -> u64 {
         self.request_id
     }
 
+    /// Returns timestamp (in string form)
     pub fn get_timestamp(&self) -> &str {
         &self.timestamp
     }
@@ -82,6 +79,7 @@ impl ImageRequest {
 
 
 impl Default for ImageRequest {
+    /// Defaults!
     fn default() -> Self {
         ImageRequest {
             request_id: 0, 
@@ -93,6 +91,7 @@ impl Default for ImageRequest {
     }
 }
 
+/// Image response struct, sent over network as JSON
 #[derive(Serialize)]
 pub struct ImageResponse {
     request_id: u64,                        // Matching request ID from Image request
