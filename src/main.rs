@@ -75,7 +75,7 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
                         info!("Recieved request {}!", request.get_id());
                         let (job_tx, mut job_rx) = tokio::sync::oneshot::channel::<msg::ImageResponse>();
                         inbox_ipc_clone.write().unwrap().push_back(msg::RenderJob::new(request, job_tx));
-                        let job_done: ImageResponse = job_rx.try_recv().unwrap();
+                        // let job_done: ImageResponse = job_rx.blocking_recv().unwrap();
                         // TODO Reply
                     }
                 }
