@@ -7,10 +7,9 @@ from datetime import datetime, timezone
 # brush is COLMAP convention:
 #   camera-local +X = right, +Y = down, +Z = forward
 #   T_world_camera rotation = camera-to-world (cam-local axes in world)
-#   natural world up = -Y (matches brush-app's camera_controls)
 _SPHERE_CENTER = (-6.285185-3, -5.5856934-3, -14.807054-2)
 _LOOK_AT_CENTER = (-6.285185, -5.5856934, -14.807054)
-_WORLD_UP = (0.0, 0.0, 1.0)
+_WORLD_UP = (0.0, 0.0, 1.0) # This is not COLMAP but the test image is +Z 
 
 
 def make_image_request(
@@ -125,10 +124,16 @@ async def send_one(
         request_id=request_id,
         T_world_camera=[pos[0], pos[1], pos[2], qw, qx, qy, qz],
     )
-    _reader, writer = await asyncio.open_connection(host, port)
+    reader, writer = await asyncio.open_connection(host, port)
     try:
         writer.write((json.dumps(req) + '\n').encode())
         await writer.drain()
+        line = await reader.readline()
+        if line:
+            resp = json.loads(line.decode())
+            print(f"Response for request_id={request_id}")
+            for k, v in resp.items():
+                print(f"{k}: {v}")
     finally:
         writer.close()
         try:
