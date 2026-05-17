@@ -8,7 +8,7 @@ use burn::backend::wgpu::WgpuDevice;
 use burn::tensor::Device;
 use log::*;
 use tokio::io::BufReader;
-
+use chrono;
 use crate::message;
 
 /// AI Function: Load a 3D Gaussian splat scene from a `.ply` file on disk.
@@ -35,6 +35,17 @@ pub async fn render(
 ) -> message::ImageResponse {
 
     info!("Processing request #{}...", request.get_id());
+
+    // Measure server latency
+    let render_start_time = chrono::Utc::now();
+    let request_time: chrono::DateTime<chrono::Utc> = match chrono::DateTime::parse_from_rfc3339(request.get_timestamp()) {
+        Ok(time) => time.into(),
+        Err(_) => {
+            warn!("Invalid time stamp recieved for request #{}! Latency metrics will not be valid for this request", request.get_id());
+            chrono::Utc::now()
+        }
+    };
+
     let position = request.get_camera_position();
     let rotation = request.get_camera_quaternion();
 
@@ -48,23 +59,6 @@ pub async fn render(
 
     let img_size   = glam::UVec2::new(800*3, 600*3);
     let background = glam::Vec3::ZERO;
-
-    // let means = splats.means();          // [N, 3]
-    // let data = means.into_data();
-    // let flat: Vec<f32> = data.to_vec().unwrap();
-    // // let position = center + glam::Vec3::new(0.0, 0.0, extent);
-
-    // let mut min = [f32::INFINITY; 3];
-    // let mut max = [f32::NEG_INFINITY; 3];
-    // for chunk in flat.chunks_exact(3) {
-    //     for i in 0..3 {
-    //         min[i] = min[i].min(chunk[i]);
-    //         max[i] = max[i].max(chunk[i]);
-    //     }
-    // }
-    // let center = [(min[0]+max[0])*0.5, (min[1]+max[1])*0.5, (min[2]+max[2])*0.5];
-    // let extent = ((max[0]-min[0]).powi(2) + (max[1]-min[1]).powi(2) + (max[2]-min[2]).powi(2)).sqrt();
-    // println!("bounds: min={:?} max={:?} center={:?} extent={:.2}", min, max, center, extent);
 
 
     let (image_tensor, _aux) = gaussian_splats::render_splats(
@@ -91,11 +85,15 @@ pub async fn render(
     image::save_buffer(&path, &img_buffer, img_size[0], img_size[1], image::ColorType::Rgba8).unwrap();
     info!("Saved request #{} to output/frame_{}", request.get_id(), request.get_id());
 
+    let completion_time = chrono::Utc::now();
+
     message::ImageResponse::new(
         request.get_id(),
-        path,
+        &path,
+        completion_time.to_string(),
         img_size[0] as u64,
         img_size[1] as u64,
+        "png",
     )
 }
 

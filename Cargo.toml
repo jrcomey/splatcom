@@ -6,8 +6,6 @@ edition = "2024"
 [dependencies]
 brush-render = { git = "https://github.com/ArthurBrussee/brush", rev = "aaf4d6d" }
 brush-serde  = { git = "https://github.com/ArthurBrussee/brush", rev = "aaf4d6d" }
-# brush-process  = { git = "https://github.com/ArthurBrussee/brush", rev = "aaf4d6d" }
-# brush-async  = { git = "https://github.com/ArthurBrussee/brush", rev = "aaf4d6d" }
 
 
 serde_json = "1.0.149"
@@ -19,6 +17,7 @@ log = "0.4.29"
 glam = { version = "0.30", features = ["serde"] }
 anyhow = "1.0.102"
 image = "0.25.10"
+chrono = "0.4.44"
 
 # `webgpu` + `extension` give us `burn::backend::wgpu::WgpuDevice` and the
 # `burn::backend` module brush expects; `metal` matches brush's own enabled
