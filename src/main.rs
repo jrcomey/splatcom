@@ -1,5 +1,5 @@
 use anyhow::Result;
-use interprocess::local_socket::traits::ListenerExt;
+// use interprocess::local_socket::traits::ListenerExt;
 use interprocess::local_socket::traits::tokio::Listener;
 use interprocess::local_socket::{GenericNamespaced, ListenerOptions, ToNsName};
 use serde_json;
@@ -10,7 +10,8 @@ mod util;
 mod message;
 use std::collections::VecDeque;
 // use std::io::{BufRead, BufReader};
-use tokio::io::BufReader;
+// use tokio::io::BufReader;
+use tokio::io::{AsyncBufReadExt, BufReader};
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
@@ -67,12 +68,12 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
             tokio::spawn(
                 async move {
                     let mut connection = BufReader::new(connection);
-                    let incoming_json = String::new();
+                    let mut incoming_json = String::new();
                     connection.read_line(&mut incoming_json).await;
                     if let Ok(request) = serde_json::from_str::<msg::ImageRequest>(&incoming_json) {
                         // Build job, send to buffer, reply to connection with response
                         info!("Recieved request {}!", request.get_id());
-                        let (job_tx, job_rx) = tokio::sync::oneshot::channel::<msg::ImageResponse>();
+                        let (job_tx, mut job_rx) = tokio::sync::oneshot::channel::<msg::ImageResponse>();
                         inbox_ipc_clone.write().unwrap().push_back(msg::RenderJob::new(request, job_tx));
                         let job_done: ImageResponse = job_rx.try_recv().unwrap();
                         // TODO Reply
