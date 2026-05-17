@@ -5,6 +5,8 @@ use crate::util::glam_quat;
 use serde::Deserialize;
 use serde_json;
 use log::*;
+// use tokio::sync::oneshot;
+use std::sync::mpsc;
 
 
 type debug_field = bool; // Current debug item to indicate a field that should be replaced later.
@@ -14,6 +16,25 @@ type debug_field = bool; // Current debug item to indicate a field that should b
 // pub struct RequestBuffer {
 //     buffer: VecDeque<ImageRequest>,
 // }
+
+pub struct RenderJob {
+    request: ImageRequest,
+    reply_channel: mpsc::Sender<ImageResponse>
+}
+
+impl RenderJob {
+    pub fn new(request: ImageRequest, reply_channel: mpsc::Sender<ImageResponse>) -> Self {
+        RenderJob { request, reply_channel }
+    }
+    
+    pub fn get_request(&self) -> &ImageRequest {
+        &self.request
+    }
+
+    pub fn reply(&self, response: ImageResponse){
+        self.reply_channel.send(response).unwrap()
+    }
+}
 
 #[derive(Clone, Deserialize)]
 pub struct ImageRequest {

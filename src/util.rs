@@ -30,7 +30,7 @@ pub async fn load_ply_file(filepath: impl AsRef<Path>, subsample_points: Option<
 
 
 pub async fn render(
-    request: message::ImageRequest, 
+    request: &message::ImageRequest, 
     splats: Splats,
 ) {
     
@@ -101,42 +101,17 @@ pub async fn render(
         gaussian_splats::TextureMode::Float,
     ).await;
 
-    // let center = glam::Vec3::ZERO;       // or wherever your bounds said
-    // let dist = extent;                       // or your extent
-    // let positions = [
-    //     ( "pos_z",  glam::Vec3::new(0.0,  0.0,  dist)),
-    //     ( "neg_z",  glam::Vec3::new(0.0,  0.0, -dist)),
-    //     ( "pos_x",  glam::Vec3::new( dist, 0.0, 0.0)),
-    //     ( "neg_x",  glam::Vec3::new(-dist, 0.0, 0.0)),
-    //     ( "pos_y",  glam::Vec3::new(0.0,  dist, 0.0)),
-    //     ( "neg_y",  glam::Vec3::new(0.0, -dist, 0.0)),
-    // ];
+    let tensor_raw = image_tensor.into_data();
+    let floats: Vec<f32> = tensor_raw.to_vec().expect("expected f32 tensor");
 
-    // for (name, pos) in positions {
-    //     let forward = (center - pos).normalize();
-    //     let rotation = glam::Quat::from_rotation_arc(glam::Vec3::Z, forward);
-    //     let cam = brush_render::camera::Camera::new(pos, rotation, 90f64.to_radians(), 60f64.to_radians(),
-    //                         glam::Vec2::new(0.5, 0.5));
-    //     let (img, _aux) = brush_render::render_splats(splats.clone(), &cam, img_size, glam::Vec3::ZERO, None, brush_render::TextureMode::Float).await;
-    //     let tensor_raw = img.into_data();
-    //     let floats: Vec<f32> = tensor_raw.to_vec().expect("expected f32 tensor");
-    //     let img_buffer: Vec<u8> = floats.iter()
-    //     .map(|f| (f.clamp(0.0, 1.0) * 255.0) as u8)
-    //     .collect();
-    //     image::save_buffer(format!("{name}.png"), &img_buffer, img_size[0], img_size[1], image::ColorType::Rgba8).unwrap();
-    // }
+    debug!("Size of output in floats: {}", floats.len());
+    debug!("Expected for RGBA: {}", 800*600*4);
 
-    // let tensor_raw = image_tensor.into_data();
-    // let floats: Vec<f32> = tensor_raw.to_vec().expect("expected f32 tensor");
+    let img_buffer: Vec<u8> = floats.iter()
+        .map(|f| (f.clamp(0.0, 1.0) * 255.0) as u8)
+        .collect();
 
-    // debug!("Size of output in floats: {}", floats.len());
-    // debug!("Expected for RGBA: {}", 800*600*4);
-
-    // let img_buffer: Vec<u8> = floats.iter()
-    //     .map(|f| (f.clamp(0.0, 1.0) * 255.0) as u8)
-    //     .collect();
-
-    // image::save_buffer("frame.png", &img_buffer, img_size[0], img_size[1], image::ColorType::Rgba8).unwrap();
+    image::save_buffer("frame.png", &img_buffer, img_size[0], img_size[1], image::ColorType::Rgba8).unwrap();
 }
 
 /// Helper function to construct quaternions from different convention

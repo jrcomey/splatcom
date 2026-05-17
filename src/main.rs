@@ -1,4 +1,6 @@
 use anyhow::Result;
+use interprocess::local_socket::traits::ListenerExt;
+use interprocess::local_socket::{GenericNamespaced, ListenerOptions, ToNsName};
 use serde_json;
 use interprocess;
 use glam;
@@ -6,6 +8,7 @@ use image;
 mod util;
 mod message;
 use std::collections::VecDeque;
+use std::io::{BufRead, BufReader};
 use std::sync::{Arc, RwLock};
 use message as msg;
 
@@ -30,29 +33,47 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
     let splats = util::load_ply_file(&path, None).await?;
     info!("Loaded {} splats from {path}", splats.num_splats());
 
+    // Incoming buffer setup
+    let inbox: Arc<RwLock<VecDeque<msg::RenderJob>>> = Arc::new(RwLock::new(VecDeque::new()));
 
-    // Spawn IPC reciever thread
-    
+
+    // Spawn IPC TX/RX thread
+    let inbox_ipc = inbox.clone(); // Free clone of ref
+    tokio::spawn(async move {
+        let namespace = "splatcom.sock".to_ns_name::<GenericNamespaced>().unwrap();
+        let listener = ListenerOptions::new().name(namespace).create_sync().unwrap();
+        for connection in listener.incoming().filter_map(|conn| conn.ok()){
+            let mut connection = BufReader::new(connection);
+            let mut incoming_json = String::new();
+            connection.read_line(&mut incoming_json).unwrap();
+            if let Ok(request) = serde_json::from_str::<msg::ImageRequest>() {
+                
+            }
+            let (job_tx, job_rx) = std::sync::mpsc::channel();
+            
+        }
+    });
+
 
     
 
     // Create ImageRequest queue
-    let buffer: Arc<RwLock<VecDeque<msg::ImageRequest>>> = Arc::new(RwLock::new(VecDeque::new()));
-    let sample_request = msg::ImageRequest::null();
-    buffer.write().unwrap().push_back(sample_request.clone());
-    buffer.write().unwrap().push_back(sample_request.clone());
-    buffer.write().unwrap().push_back(sample_request.clone());
-    buffer.write().unwrap().push_back(sample_request.clone());
-    buffer.write().unwrap().push_back(sample_request.clone());
+    
+    // let sample_request = msg::ImageRequest::null();
+    // inbox.write().unwrap().push_back(sample_request.clone());
+    // inbox.write().unwrap().push_back(sample_request.clone());
+    // inbox.write().unwrap().push_back(sample_request.clone());
+    // inbox.write().unwrap().push_back(sample_request.clone());
+    // inbox.write().unwrap().push_back(sample_request.clone());
 
     info!("Beginning render loop...");
 
 
     // Main rendering loop
 
-    while let Some(r) = buffer.read().unwrap().front() {
-        let request = buffer.write().unwrap().pop_front().unwrap();
-        util::render(request, splats.clone()).await;
+    while let Some(r) = inbox.read().unwrap().front() {
+        let job = inbox.write().unwrap().pop_front().unwrap();
+        util::render(job.get_request(), splats.clone()).await;
     }
 
     
