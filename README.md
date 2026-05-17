@@ -2,6 +2,21 @@
 
 Single-client gaussian splat rendering process designed to provide simulated camera data for simulation use.
 
+## Client Setup
+
+Create a python virtual environment using the following:
+
+```bash
+python -m venv .env
+source .env/bin/activate
+```
+
+Install the test client package with the following:
+
+```bash
+pip install -e ./basic_client
+```
+
 ## Usage
 
 Simply call the splatcom executable with the relative filepath of the .ply file you need to render. E.g.
