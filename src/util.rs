@@ -30,10 +30,10 @@ pub async fn load_ply_file(filepath: impl AsRef<Path>, subsample_points: Option<
 
 
 pub async fn render(
-    request: &message::ImageRequest, 
+    request: &message::ImageRequest,
     splats: Splats,
-) {
-    
+) -> message::ImageResponse {
+
     info!("Processing request #{}...", request.get_id());
     let position = request.get_camera_position();
     let rotation = request.get_camera_quaternion();
@@ -51,11 +51,11 @@ pub async fn render(
 
 
     let (image_tensor, _aux) = gaussian_splats::render_splats(
-        splats, 
-        &camera, 
-        img_size, 
-        background, 
-        None, 
+        splats,
+        &camera,
+        img_size,
+        background,
+        None,
         gaussian_splats::TextureMode::Float,
     ).await;
 
@@ -68,10 +68,18 @@ pub async fn render(
     let img_buffer: Vec<u8> = floats.iter()
         .map(|f| (f.clamp(0.0, 1.0) * 255.0) as u8)
         .collect();
-    
 
-    image::save_buffer(format!("output/frame_{}.png", request.get_id()), &img_buffer, img_size[0], img_size[1], image::ColorType::Rgba8).unwrap();
+
+    let path = format!("output/frame_{}.png", request.get_id());
+    image::save_buffer(&path, &img_buffer, img_size[0], img_size[1], image::ColorType::Rgba8).unwrap();
     info!("Saved request #{} to output/frame_{}", request.get_id(), request.get_id());
+
+    message::ImageResponse::new(
+        request.get_id(),
+        path,
+        img_size[0] as u64,
+        img_size[1] as u64,
+    )
 }
 
 /// Helper function to construct quaternions from different convention
