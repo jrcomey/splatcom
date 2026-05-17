@@ -49,6 +49,23 @@ pub async fn render(
     let img_size   = glam::UVec2::new(800*3, 600*3);
     let background = glam::Vec3::ZERO;
 
+    // let means = splats.means();          // [N, 3]
+    // let data = means.into_data();
+    // let flat: Vec<f32> = data.to_vec().unwrap();
+    // // let position = center + glam::Vec3::new(0.0, 0.0, extent);
+
+    // let mut min = [f32::INFINITY; 3];
+    // let mut max = [f32::NEG_INFINITY; 3];
+    // for chunk in flat.chunks_exact(3) {
+    //     for i in 0..3 {
+    //         min[i] = min[i].min(chunk[i]);
+    //         max[i] = max[i].max(chunk[i]);
+    //     }
+    // }
+    // let center = [(min[0]+max[0])*0.5, (min[1]+max[1])*0.5, (min[2]+max[2])*0.5];
+    // let extent = ((max[0]-min[0]).powi(2) + (max[1]-min[1]).powi(2) + (max[2]-min[2]).powi(2)).sqrt();
+    // println!("bounds: min={:?} max={:?} center={:?} extent={:.2}", min, max, center, extent);
+
 
     let (image_tensor, _aux) = gaussian_splats::render_splats(
         splats,
@@ -62,8 +79,8 @@ pub async fn render(
     let tensor_raw = image_tensor.into_data();
     let floats: Vec<f32> = tensor_raw.to_vec().expect("expected f32 tensor");
 
-    debug!("Size of output in floats: {}", floats.len());
-    debug!("Expected for RGBA: {}", 800*600*4);
+    // debug!("Size of output in floats: {}", floats.len());
+    // debug!("Expected for RGBA: {}", 800*600*4);
 
     let img_buffer: Vec<u8> = floats.iter()
         .map(|f| (f.clamp(0.0, 1.0) * 255.0) as u8)
