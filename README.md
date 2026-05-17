@@ -64,7 +64,7 @@ This section contains a brief summary of design decisions.
 
 ## IPC Choices and Usage
 
-~~So far I've decided on using the interprocess crate for IPC. I'm developing this on macOS, and locally this will yield a local socket, which behaves like a websocket but without using the network layer. Should enable sharing between processes on the same computer. Assuming that this may be transitioned to a network-based solution in future, this could be easily swapped out with a websocket if the need arises.~~
+~~I've decided on using the interprocess crate for IPC. I'm developing this on macOS, and locally this will yield a local socket, which behaves like a websocket but without using the network layer. Should enable sharing between processes on the same computer. Assuming that this may be transitioned to a network-based solution in future, this could be easily swapped out with a websocket if the need arises.~~
 
 
 A shared memory IPC is generally not possible with a Docker image, as it does not share the kernal of main computer, and therefore not with the client. `splatcom` previously used `interprocess` for IPC, but has been swapped out for `tokio`-based TCP communication. Server now communicates over TCP on `127.0.0.1:8080`, and is configured to work whether on Docker or built locally.
