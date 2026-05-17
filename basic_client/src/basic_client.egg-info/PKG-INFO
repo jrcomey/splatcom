@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: basic_client
+Version: 0.0.1
+Summary: Basic sender test client for Splatcom
+Author-email: Jack Comey <jack.rhys.comey@gmail.com>
+Requires-Python: >=3.13.2
+Description-Content-Type: text/markdown
