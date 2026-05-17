@@ -106,7 +106,7 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
                     Some(job) => {
                         let (request, reply) = job.into_parts();
                         let response = util::render(&request, splats.clone()).await;
-                        let _ = reply.send(response);
+                        let _ = reply.send(response.unwrap());
                     }
                     _ => tokio::task::yield_now().await,
                 }

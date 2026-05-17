@@ -19,9 +19,9 @@ impl RenderJob {
         RenderJob { request, reply_channel }
     }
 
-    pub fn get_request(&self) -> &ImageRequest {
-        &self.request
-    }
+    // pub fn get_request(&self) -> &ImageRequest {
+    //     &self.request
+    // }
 
     pub fn into_parts(self) -> (ImageRequest, oneshot::Sender<ImageResponse>) {
         (self.request, self.reply_channel)

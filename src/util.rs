@@ -4,7 +4,7 @@ use log::*;
 use brush_render::gaussian_splats::{self, Splats};
 
 
-pub async fn render(request: &message::ImageRequest, splats: Splats) -> message::ImageResponse {
+pub async fn render(request: &message::ImageRequest, splats: Splats) -> tokio::io::Result<message::ImageResponse> {
 
     info!("Processing request #{}...", request.get_id());
 
@@ -60,21 +60,24 @@ pub async fn render(request: &message::ImageRequest, splats: Splats) -> message:
 
     
     // Same image
+    std::fs::create_dir_all("output")?;
     let path = format!("output/frame_{}.png", request.get_id());
-    image::save_buffer(&path, &img_buffer, img_size[0], img_size[1], image::ColorType::Rgba8).unwrap();
+    image::save_buffer(&path, &img_buffer, img_size[0], img_size[1], image::ColorType::Rgba8)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
     info!("Saved request #{} to output/frame_{}", request.get_id(), request.get_id());
 
     let completion_time = chrono::Utc::now();
 
-    message::ImageResponse::new(
+    let output = message::ImageResponse::new(
         request.get_id(),
         &path,
         completion_time.to_string(),
         img_size[0] as u64,
         img_size[1] as u64,
         "png",
-        (completion_time-request_time).num_microseconds().unwrap()
-    )
+        (completion_time-request_time).num_microseconds().unwrap());
+
+    Ok(output)
 }
 
 /// Helper function to construct quaternions from different convention

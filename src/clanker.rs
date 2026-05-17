@@ -1,13 +1,12 @@
+/// Contains AI generated code. May be unsafe!!
+
 use std::path::Path;
 use anyhow::Result;
-use log::*;
 use tokio::io::BufReader;
-use chrono;
 use burn::backend::wgpu::WgpuDevice;
 use burn::tensor::Device;
-use crate::message;
 use brush_serde::load_splat_from_ply;
-use brush_render::gaussian_splats::{self, SplatRenderMode, Splats};
+use brush_render::gaussian_splats::{SplatRenderMode, Splats};
 
 
 
