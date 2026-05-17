@@ -46,15 +46,6 @@ pub struct ImageRequest {
 
 impl ImageRequest {
 
-    // /// Basic Constructor for ImageRequest, to be filled with actual IO later
-    // pub fn new() -> Self {
-    //     ImageRequest { ..Default::default()}
-    // }
-
-    // pub fn null() -> Self {
-    //     ImageRequest { ..Default::default()}
-    // }
-
 
     pub fn get_camera_position(&self) -> glam::Vec3 {
         glam::Vec3 { 
