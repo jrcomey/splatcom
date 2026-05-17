@@ -111,6 +111,6 @@ Assuming that there is sufficient hardware to render video at a given rate (say,
 * Dependency management for `brush-render`/`brush-serde`/`burn` package management. Brush subcrates depend on burn, but neither burn nor brush locks versions relative to each other. As of 15 MAY 2026, both projects have been updated multiple times today. Used Claude Code to lock down dependencies for each package relative to each other, which saved a large chunk of time without actually contributing to the design process.
 * Documentation for `brush` backend, which contains little to no comments or documentation (e.g. camera FOV is in radians, not degrees)
 * Some minor debugging code not used in the final build (e.g. generate a list of points and save off images at each point) as a time saving measure
-* A ctrl-c shutdown feature which stopped the socket from being blocked when the program was closed
+* A method to interpret ctrl-c for Tokio threads (shutdown flag and message passing was not AI)
 * Sender file functions to generate a sphere of points and send them over the TCP port. Something I can do but more of a time saving thing.
 * Docker tutorial
