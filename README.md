@@ -25,6 +25,8 @@ Simply call the splatcom executable with the relative filepath of the .ply file 
 cargo r -- data/construction_site.ply
 ```
 
+which will start the server. A basic `client.py' has been provided to allow for testing, which will generate a series of images in a sphere around a given point that will point at the center of the model.
+
 The server is also launchable through Docker using the following commands:
 
 ```bash
