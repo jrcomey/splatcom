@@ -18,6 +18,8 @@ extern crate log;
 
 use log::*;
 
+use crate::message::ImageResponse;
+
 async fn run_server(path: &str) -> Result<(), anyhow::Error> {
 
     // Broad architecture layout:
@@ -38,45 +40,43 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
 
 
     // Spawn IPC TX/RX thread
+    info!("Spawning IPC thread...");
     let inbox_ipc = inbox.clone(); // Free clone of ref
     tokio::spawn(async move {
+        // Spawn socket for a single client
         let namespace = "splatcom.sock".to_ns_name::<GenericNamespaced>().unwrap();
         let listener = ListenerOptions::new().name(namespace).create_sync().unwrap();
+
+        // Create a new tokio thread per incoming request. If it's valid, build the job, send to the buffer, and await the response. When you recieve the response, reply with image
         for connection in listener.incoming().filter_map(|conn| conn.ok()){
-            let mut connection = BufReader::new(connection);
-            let mut incoming_json = String::new();
-            connection.read_line(&mut incoming_json).unwrap();
-            if let Ok(request) = serde_json::from_str::<msg::ImageRequest>() {
-                
-            }
-            let (job_tx, job_rx) = std::sync::mpsc::channel();
-            
+            let inbox_ipc_clone = inbox_ipc.clone();
+            tokio::spawn(
+                async move{
+                    let mut connection = BufReader::new(connection);
+                    let mut incoming_json = String::new();
+                    connection.read_line(&mut incoming_json).unwrap();
+                    if let Ok(request) = serde_json::from_str::<msg::ImageRequest>(&incoming_json) {
+                        // Build job, send to buffer, reply to connection with response
+                        let (job_tx, job_rx) = std::sync::mpsc::channel::<msg::ImageResponse>();
+                        inbox_ipc_clone.write().unwrap().push_back(msg::RenderJob::new(request, job_tx));
+                        let job_done: ImageResponse = job_rx.recv().unwrap();
+                        // TODO Reply
+                    }
+                }
+            );
         }
     });
-
-
-    
-
-    // Create ImageRequest queue
-    
-    // let sample_request = msg::ImageRequest::null();
-    // inbox.write().unwrap().push_back(sample_request.clone());
-    // inbox.write().unwrap().push_back(sample_request.clone());
-    // inbox.write().unwrap().push_back(sample_request.clone());
-    // inbox.write().unwrap().push_back(sample_request.clone());
-    // inbox.write().unwrap().push_back(sample_request.clone());
 
     info!("Beginning render loop...");
 
 
     // Main rendering loop
-
-    while let Some(r) = inbox.read().unwrap().front() {
-        let job = inbox.write().unwrap().pop_front().unwrap();
-        util::render(job.get_request(), splats.clone()).await;
+    loop { 
+        while let Some(r) = inbox.read().unwrap().front() {
+            let job = inbox.write().unwrap().pop_front().unwrap();
+            util::render(job.get_request(), splats.clone()).await;
+        }
     }
-
-    
     
     info!("Done!");
     Ok(())
