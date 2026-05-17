@@ -10,6 +10,16 @@ Simply call the splatcom executable with the relative filepath of the .ply file 
 cargo r -- data/construction_site.ply
 ```
 
+The server is also launchable through Docker using the following commands:
+
+```bash
+docker build -t splatcom . 
+docker run --rm -v "$(pwd)/data:/data:ro" -p 127.0.0.1:8080:8080 splatcom /data/construction_site.ply
+```
+
+Assuming your model is located in the `data/` directory. 
+
+NOTE: The containerization is untested. This server was developed on macOS, and there is no compatibility layer for calls to the M4 GPU from a Linux image. It should work on any other hardware, but is untested. 
 ## Dependencies
 
 Below is a list of dependencies and the reasons they are included:
@@ -21,10 +31,13 @@ Below is a list of dependencies and the reasons they are included:
 * `log/env_logger/pretty_env_logger` | crate for handling logging statements
 * `glam` | Vector graphics library used by `brush`
 * `anyhow` | multipurpose error handling crate
+* `tokio` | Asynchronous rust, used for both async threads and networking
 
 ## IPC Choices and Usage
 
-So far I've decided on using the interprocess crate for IPC. I'm developing this on macOS, and locally this will yield a local socket, which behaves like a websocket but without using the network layer. Should enable sharing between processes on the same computer. Assuming that this may be transitioned to a network-based solution in future, this could be easily swapped out with a websocket if the need arises.
+~~So far I've decided on using the interprocess crate for IPC. I'm developing this on macOS, and locally this will yield a local socket, which behaves like a websocket but without using the network layer. Should enable sharing between processes on the same computer. Assuming that this may be transitioned to a network-based solution in future, this could be easily swapped out with a websocket if the need arises.~~
+
+`interprocess` has been swapped out for Tokio. I misread the original prompt about shared memory and assumed requests had to be sent through shared memory, not just saved images. Server now communicates over TCP on `127.0.0.1`, and is configured to work whether on Docker or built locally.
 
 ### Message Passing
 
@@ -36,3 +49,5 @@ I have chosen to utilize JSON for the time being. Protobuf is a better choice fo
 * Documentation for `brush` backend, which contains little to no comments or documentation (e.g. camera FOV is in radians, not degrees)
 * Some minor debugging code not used in the final build (e.g. generate a list of points and save off images at each point) as a time saving measure
 * A ctrl-c shutdown feature which stopped the socket from being blocked when the program was closed
+* Sender file functions to generate a sphere of points and send them over the TCP port. Something I can do but more of a time saving thing.
+* Docker tutorial
