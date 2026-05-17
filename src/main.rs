@@ -4,14 +4,14 @@ use anyhow::Result;
 // use interprocess::local_socket::{GenericNamespaced, ListenerOptions, ToNsName};
 use serde_json;
 // use interprocess;
-use glam;
-use image;
+// use glam;
+// use image;
 mod util;
 mod message;
 use std::collections::VecDeque;
 // use std::io::{BufRead, BufReader};
 // use tokio::io::BufReader;
-use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpListener;
 
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -78,9 +78,13 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
                         // Build job, send to buffer, reply to connection with response
                         info!("Recieved request {}!", request.get_id());
                         let (job_tx, mut job_rx) = tokio::sync::oneshot::channel::<msg::ImageResponse>();
+                        // Send job to buffer, wait for reply
                         inbox_ipc_clone.write().unwrap().push_back(msg::RenderJob::new(request, job_tx));
-                        let job_done: ImageResponse = job_rx.blocking_recv().unwrap();
-                        // TODO Reply
+                        let job_done: ImageResponse = job_rx.await.unwrap();
+
+                        // Send reply JSON to client
+                        let str_reply = serde_json::to_string(&job_done).unwrap();
+                        write_half.write_all(str_reply.as_bytes()).await.unwrap();
                     }
                 }
             );
