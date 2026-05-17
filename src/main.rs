@@ -15,6 +15,7 @@ use log::*;
 
 mod util;
 mod message;
+mod clanker;
 use message as msg;
 
 
@@ -31,7 +32,7 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
 
     // Load File
     info!("Loading {}...", path);
-    let splats = util::load_ply_file(&path, None).await?;
+    let splats = clanker::load_ply_file(&path, None).await?;
     info!("Loaded {} splats from {path}", splats.num_splats());
 
     // Incoming buffer setup
