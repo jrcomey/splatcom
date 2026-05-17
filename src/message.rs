@@ -102,13 +102,13 @@ pub struct ImageResponse {
     height: u64,                            // Image height in pixels
     dtype: String,                          // Image type
     stride: debug_field,                    // FIXME: No idea. 
-    render_latency_us: u64,                 // Server render latency in us
+    render_latency_us: i64,                 // Server render latency in us
 }
 
 impl ImageResponse {
     // Basic constructor
-    pub fn new(request_id: u64, time: &str, image_path: String, width: u64, height: u64, dtype: &str) -> Self {
-        ImageResponse { request_id, timestamp: time.to_string(), image_path, width, height, dtype: dtype.to_string(), ..Default::default() }
+    pub fn new(request_id: u64, time: &str, image_path: String, width: u64, height: u64, dtype: &str, latency_time_us: i64) -> Self {
+        ImageResponse { request_id, timestamp: time.to_string(), image_path, width, height, dtype: dtype.to_string(), stride: false, render_latency_us: latency_time_us}
     }
 }
 

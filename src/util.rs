@@ -29,10 +29,7 @@ pub async fn load_ply_file(filepath: impl AsRef<Path>, subsample_points: Option<
 
 
 
-pub async fn render(
-    request: &message::ImageRequest,
-    splats: Splats,
-) -> message::ImageResponse {
+pub async fn render(request: &message::ImageRequest, splats: Splats) -> message::ImageResponse {
 
     info!("Processing request #{}...", request.get_id());
 
@@ -46,6 +43,8 @@ pub async fn render(
         }
     };
 
+
+    // Construct Brush Camera from properties
     let position = request.get_camera_position();
     let rotation = request.get_camera_quaternion();
 
@@ -57,10 +56,12 @@ pub async fn render(
         glam::Vec2::new(0.5, 0.5),
     );
 
+    // Hardcoded image size for now
     let img_size   = glam::UVec2::new(800*3, 600*3);
     let background = glam::Vec3::ZERO;
 
 
+    // From brush code
     let (image_tensor, _aux) = gaussian_splats::render_splats(
         splats,
         &camera,
@@ -70,6 +71,8 @@ pub async fn render(
         gaussian_splats::TextureMode::Float,
     ).await;
 
+
+    // Process tensor into image
     let tensor_raw = image_tensor.into_data();
     let floats: Vec<f32> = tensor_raw.to_vec().expect("expected f32 tensor");
 
@@ -80,7 +83,8 @@ pub async fn render(
         .map(|f| (f.clamp(0.0, 1.0) * 255.0) as u8)
         .collect();
 
-
+    
+    // Same image
     let path = format!("output/frame_{}.png", request.get_id());
     image::save_buffer(&path, &img_buffer, img_size[0], img_size[1], image::ColorType::Rgba8).unwrap();
     info!("Saved request #{} to output/frame_{}", request.get_id(), request.get_id());
@@ -94,6 +98,7 @@ pub async fn render(
         img_size[0] as u64,
         img_size[1] as u64,
         "png",
+        (completion_time-request_time).num_microseconds().unwrap()
     )
 }
 
