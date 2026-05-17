@@ -1,3 +1,5 @@
+use std::pin;
+
 use crate::message;
 use env_logger;
 use log::*;
@@ -22,8 +24,32 @@ pub async fn render(request: &message::ImageRequest, splats: Splats) -> tokio::i
     // Construct Brush Camera from properties
     let position = request.get_camera_position();
     let rotation = request.get_camera_quaternion();
-    let (fov_x, fov_y) = request.get_camera_fov();
-    let (pinhole_x, pinhole_y) = request.get_pinhole_property();
+    let (mut fov_x, mut fov_y) = request.get_camera_fov();
+    let (mut pinhole_x, mut pinhole_y) = request.get_pinhole_property();
+    let (mut image_size_x, mut image_size_y) = request.get_image_size();
+    
+
+    // Invalid value handling
+    if fov_x < 0.0 {
+        warn!("Request recieved with invalid FOV value! Defualting to 90 deg");
+        fov_x = 90.0;
+    }
+    if fov_y < 0.0 {
+        warn!("Request recieved with invalid FOV value! Defualting to 90 deg");
+        fov_x = 90.0;
+    }
+    if pinhole_x > 1.0 {
+        warn!("Request recieved with invalid pinhole value! Defualting to 0.5");
+        pinhole_x = 0.5;
+    }
+    if pinhole_y < 0.0 {
+        warn!("Request recieved with invalid pinhole value! Defualting to 0.5");
+        pinhole_y = 0.5;
+    }
+    if pinhole_y > 1.0 {
+        warn!("Request recieved with invalid pinhole value! Defualting to 0.5");
+        pinhole_y = 0.5;
+    }
 
     let camera = brush_render::camera::Camera::new(
         position,
@@ -33,9 +59,9 @@ pub async fn render(request: &message::ImageRequest, splats: Splats) -> tokio::i
         glam::Vec2::new(pinhole_x, pinhole_y),
     );
 
-    // Hardcoded image size for now
-    let img_size   = glam::UVec2::new(800*3, 600*3);
-    let background = glam::Vec3::ZERO;
+    // Construct Image Size
+    let img_size   = glam::UVec2::new(image_size_x, image_size_y);
+    let background = glam::Vec3::new(1.0, 1.0, 1.0);
 
 
     // From brush code
@@ -72,8 +98,8 @@ pub async fn render(request: &message::ImageRequest, splats: Splats) -> tokio::i
 
     let output = message::ImageResponse::new(
         request.get_id(),
+        &completion_time.to_string(),
         &path,
-        completion_time.to_string(),
         img_size[0] as u64,
         img_size[1] as u64,
         "png",
