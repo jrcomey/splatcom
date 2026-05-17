@@ -16,10 +16,11 @@ def make_image_request(
     request_id: int,
     T_world_camera: list[float],
     camera_id: bool = False,
-    intrinsics: bool = False,
+    intrinsics: list[float] = [90, 60, 0.5, 0.5],
     timestamp: str | None = None,
 ) -> dict:
     assert len(T_world_camera) == 7, "T_world_camera must be [x, y, z, qw, qx, qy, qz]"
+    assert len(intrinsics) == 4, "Camera intrinsics must be in the following format: [FOV_x_deg, FOV_y_deg, pinhole_c_x, pinhole_c_y]"
     return {
         "request_id": request_id,
         "timestamp": timestamp or datetime.now(timezone.utc).isoformat(),

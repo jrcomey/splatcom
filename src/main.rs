@@ -102,17 +102,11 @@ async fn run_server(path: &str) -> Result<(), anyhow::Error> {
             }
             _ = async {
                 let job = inbox.write().unwrap().pop_front();
-                let splats_ref = splats.clone();
                 match job {
                     Some(job) => {
-                        tokio::spawn(
-                            async move {
-                                let (request, reply) = job.into_parts();
-                                let response = util::render(&request, splats_ref.clone()).await;
-                                let _ = reply.send(response.unwrap());
-                            }
-                        );
-                        ;
+                        let (request, reply) = job.into_parts();
+                        let response = util::render(&request, splats.clone()).await;
+                        let _ = reply.send(response.unwrap());
                     }
                     _ => tokio::task::yield_now().await,
                 }
