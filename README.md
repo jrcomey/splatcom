@@ -91,6 +91,18 @@ The process would go something like this: Each job spawns a new `tokio` thread t
 
 Some experimentation revealed that the `brush` backend uses a global `Mutex` to serialize all render calls, and locks up on a multithreaded implementation like the one above. The solution would be to swap out the renderer for `gsplat` or a custom implementation of `brush` to fix this issue.
 
+### Depth Mapping
+
+If this were implemented with a custom backend, a seperate map of splat minimum z-distance (away from screen) per-pixel could be returned on top of the existing image rasterization which would provide a depth map and allow simulation of a depth-camera. I may expand this project in future with a custom rasterization loop which would allow an easier return of those values, but for the existing rasterizer would require some modification.
+
+### Video Streaming
+
+Assuming that there is sufficient hardware to render video at a given rate (say, 60 FPS), a video streaming codec could be used in place of the metrics response packet that is currently being sent. It would require the following modifications to the program:
+
+* Queue replaced with a priority queue, so that images are processed according to their ID order instead of the order in which they arrived
+* Reply package replaced with an image streaming format such as AVC (https://en.wikipedia.org/wiki/Advanced_Video_Coding)
+* Client interface using the RTSP format
+
 
 # AI Usage
 
