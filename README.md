@@ -1,6 +1,6 @@
 # splatcom
 
-![Sample Image](./example_frame.png)
+![Sample Image](./example_frame_2.png)
 
 
 Single-client gaussian splat rendering process designed to provide simulated camera data for simulation use.
