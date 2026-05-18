@@ -1,5 +1,3 @@
-use std::pin;
-
 use crate::message;
 use env_logger;
 use log::*;
