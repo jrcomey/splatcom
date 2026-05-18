@@ -18,11 +18,6 @@ impl RenderJob {
     pub fn new(request: ImageRequest, reply_channel: oneshot::Sender<ImageResponse>) -> Self {
         RenderJob { request, reply_channel }
     }
-
-    // pub fn get_request(&self) -> &ImageRequest {
-    //     &self.request
-    // }
-
     pub fn into_parts(self) -> (ImageRequest, oneshot::Sender<ImageResponse>) {
         (self.request, self.reply_channel)
     }
@@ -31,7 +26,7 @@ impl RenderJob {
 /// Image request struct, recieved over network as JSON
 #[derive(Clone, Deserialize)]
 pub struct ImageRequest {
-    request_id: u64,                        //  Unique id (hash? integer? Integer means overflow problem. Check later.)
+    request_id: u64,                        //  Unique id integer
     timestamp: String,                      //  Timestamp from chrono, in UTC format (RFC3339 format)
     camera_id: debug_field,                 //  Camera ID, if needed on the client end
     T_world_camera: [f32; 7],               //  Camera transform. +X forward, +Z up. Configuration: [x y z qw qx qy qz]
