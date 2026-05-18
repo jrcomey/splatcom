@@ -36,10 +36,10 @@ pub async fn render(request: &message::ImageRequest, splats: Splats) -> tokio::i
     }
     if fov_y < 0.0 {
         warn!("Request recieved with invalid FOV value! Defualting to 90 deg");
-        fov_x = 90.0;
+        fov_y = 90.0;
     }
 
-    
+
     if pinhole_x < 0.0 {
         warn!("Request recieved with invalid pinhole value! Defualting to 0.5");
         pinhole_x = 0.5;
