@@ -15,7 +15,7 @@ _WORLD_UP = (0.0, 0.0, 1.0) # This is not COLMAP but the test image is +Z
 def make_image_request(
     request_id: int,
     T_world_camera: list[float],
-    camera_id: bool = False,
+    camera_id: int = 0,
     intrinsics: list[float] = [90, 60, 0.5, 0.5],
     image_size: list[int] = [800, 600],
     timestamp: str | None = None,

@@ -5,10 +5,6 @@ use log::*;
 use tokio::sync::oneshot;
 
 
-
-type debug_field = bool; // Current debug item to indicate a field that should be replaced later.
-
-
 pub struct RenderJob {
     request: ImageRequest,
     reply_channel: oneshot::Sender<ImageResponse>,
@@ -28,7 +24,7 @@ impl RenderJob {
 pub struct ImageRequest {
     request_id: u64,                        //  Unique id integer
     timestamp: String,                      //  Timestamp from chrono, in UTC format (RFC3339 format)
-    camera_id: debug_field,                 //  Camera ID, if needed on the client end
+    camera_id: u32,                 //  Camera ID, if needed on the client end
     T_world_camera: [f32; 7],               //  Camera transform. +X forward, +Z up. Configuration: [x y z qw qx qy qz]
     intrinsics: [f32; 4],                   //  Camera properties. [FOV X, FOV Y, pinhole x, pinhole y]. Pinhole numbers between 0 and 1, FOV in degrees
     image_size: [u32; 2],                   //  Image size. [x_pixels, y_pixels]
@@ -92,7 +88,7 @@ impl Default for ImageRequest {
         ImageRequest {
             request_id: 0, 
             timestamp: "".to_string(), 
-            camera_id: false, 
+            camera_id: 0, 
             T_world_camera: [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0], 
             intrinsics: [90.0, 60.0, 0.5, 0.5],
             image_size: [800, 600]
